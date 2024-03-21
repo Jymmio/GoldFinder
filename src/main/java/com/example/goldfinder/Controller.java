@@ -81,6 +81,9 @@ public class Controller {
             anchorPane.getChildren().remove(pausePane);
         if(anchorPane.getChildren().contains(pausedText))
             anchorPane.getChildren().remove(pausedText);
+        String tempScoreText = score.getText();
+        Integer tempScore = Integer.valueOf(tempScoreText) + 1;
+        score.setText(tempScore.toString());
     }
 
     public void oneStepButtonAction(ActionEvent actionEvent) {
