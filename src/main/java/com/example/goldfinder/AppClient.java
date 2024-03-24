@@ -12,7 +12,7 @@ import java.net.Socket;
 import java.net.URL;
 
 public class AppClient extends javafx.application.Application {
-    private static final String VIEW_RESOURCE_PATH = "/com/example/goldfinder/gridView.fxml";
+    private static final String START_RESOURCE_PATH = "/com/example/goldfinder/gameStart.fxml";
     private static final String APP_NAME = "Gold Finder";
 
 
@@ -38,13 +38,11 @@ public class AppClient extends javafx.application.Application {
 
     private void initializeView() throws IOException {
         FXMLLoader loader = new FXMLLoader();
-        URL location = AppClient.class.getResource(VIEW_RESOURCE_PATH);
+        URL location = AppClient.class.getResource(START_RESOURCE_PATH);
         loader.setLocation(location);
         view = loader.load();
         Controller controller = loader.getController();
-        view.setOnKeyPressed(controller::handleMove);
-        controller.initialize();
-
+        controller.setStage(this.primaryStage);
     }
 
     private void showScene() {
@@ -55,8 +53,5 @@ public class AppClient extends javafx.application.Application {
 
     public static void main(String[] args) throws IOException {
         launch(args);
-        Socket s = new Socket("localhost", 1234);
-        InputStream is = s.getInputStream();
-        OutputStream os = s.getOutputStream();
     }
 }

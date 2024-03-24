@@ -10,12 +10,12 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane id="AnchorPane" fx:id="anchorPane" prefHeight="400.0" prefWidth="600.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/18" fx:controller="com.example.goldfinder.Controller">
+<AnchorPane id="AnchorPane" fx:id="anchorPane" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: black;" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.goldfinder.Controller">
 
-<HBox fx:id="hbox" prefHeight="800.0" prefWidth="800.0" styleClass="background" stylesheets="@DarkTheme.css" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
-    <VBox fx:id="vbox" minWidth="112.0" prefHeight="800.0" prefWidth="112.0">
+<HBox fx:id="hbox" prefHeight="800.0" prefWidth="800.0" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml">
+    <VBox fx:id="vbox" minWidth="112.0" prefHeight="800.0" prefWidth="112.0" styleClass="background" stylesheets="@DarkTheme.css">
         <Separator maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="24.0" prefWidth="200.0" />
-        <Label alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="24.0" prefWidth="200.0" text="Score" />
+        <Label fx:id="scoreName" alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="24.0" prefWidth="200.0" text="Score" />
         <Label fx:id="score" alignment="CENTER" contentDisplay="TEXT_ONLY" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="24.0" prefWidth="200.0" />
         <Separator maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="24.0" prefWidth="200.0" />
         <Button fx:id="restartButton" maxHeight="-Infinity" maxWidth="-Infinity" mnemonicParsing="false" onAction="#restartButtonAction" prefHeight="24.0" prefWidth="200.0" text="Restart" />
@@ -27,5 +27,5 @@
     </Canvas>
 
 </HBox>
-   <Pane fx:id="pauseEnable" layoutX="112.0" prefHeight="800.0" prefWidth="800.0" style="-fx-background-color: rgba(0,0,0,0.7);" />
+   <Pane fx:id="pauseEnable" layoutX="112.0" prefHeight="800.0" prefWidth="800.0" style="-fx-background-color: rgb(0,0,0);" />
 </AnchorPane>

@@ -2,8 +2,13 @@ package com.example.goldfinder;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
@@ -14,11 +19,25 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.URL;
 
 import static com.example.goldfinder.server.AppServer.COLUMN_COUNT;
 import static com.example.goldfinder.server.AppServer.ROW_COUNT;
 
 public class Controller {
+    private String playerName = "";
+    private Stage stage;
+    private static final String VIEW_RESOURCE_PATH = "/com/example/goldfinder/gridView.fxml";
+    @FXML
+    Button play;
+    @FXML
+    TextField textField;
     @FXML
     AnchorPane anchorPane;
     @FXML
@@ -27,6 +46,8 @@ public class Controller {
     HBox hbox;
     @FXML
     VBox vbox;
+    @FXML
+    Label scoreName;
     @FXML
     Label score;
     @FXML
@@ -37,10 +58,35 @@ public class Controller {
     int column, row;
     boolean isPaused;
 
-    public void initialize() {
+
+    /*
+    Socket s = new Socket("localhost", 1234);
+    InputStream is = s.getInputStream();
+    OutputStream os = s.getOutputStream();*/
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+    @FXML
+    public void switchGameScene() throws IOException{
+        FXMLLoader loader = new FXMLLoader();
+        URL location = AppClient.class.getResource(VIEW_RESOURCE_PATH);
+        loader.setLocation(location);
+        Parent root = loader.load();
+        Scene scene = new Scene(root);
+        stage.setScene(scene);
+        stage.show();
+
+        Controller gameController = loader.getController();
+        gameController.setPlayerName(textField.getText());
+        gameController.initializeGame();
+        root.setOnKeyPressed(gameController::handleMove);
+    }
+    public void initializeGame(){
         this.gridView = new GridView(gridCanvas, COLUMN_COUNT, ROW_COUNT);
         pausePane = pauseEnable;
         score.setText("0");
+        scoreName.setText(playerName);
+        System.out.println(playerName);
         gridView.repaint();
         int[] rowCol = gridView.paintPlayerStartPosition();
         column = rowCol[0]; row = rowCol[1];
@@ -90,7 +136,7 @@ public class Controller {
     }
 
     public void restartButtonAction(ActionEvent actionEvent) {
-        initialize();
+        initializeGame();
     }
 
     public void handleMove(KeyEvent keyEvent) {
@@ -104,6 +150,9 @@ public class Controller {
         }
         gridView.repaint();
         gridView.paintToken(column, row);
+    }
+    public void setPlayerName(String name){
+        this.playerName = name;
     }
 }
 
