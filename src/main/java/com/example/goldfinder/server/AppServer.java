@@ -17,12 +17,15 @@ public class AppServer {
 
     public static void main(String[] args) throws IOException {
         ServerSocket ss = new ServerSocket(serverPort);
+        System.out.println("server should be listening on port " + serverPort);
         Socket s = ss.accept();
+        if(s != null){
+            System.out.println("Player 1 Connected !");
+        }
         InputStream is = s.getInputStream();
         OutputStream os = s.getOutputStream();
 
         Grid grid = new Grid(COLUMN_COUNT, ROW_COUNT, new Random());
-        System.out.println("server should be listening on port " + serverPort);
     }
 
 }

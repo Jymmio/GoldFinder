@@ -3,6 +3,8 @@ package com.example.goldfinder;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.paint.Color;
 
+import java.util.Random;
+
 public class GridView {
     Canvas canvas;
     int columnCount, rowCount;
@@ -39,8 +41,19 @@ public class GridView {
 
     private double cellWidth(){ return canvas.getWidth()/columnCount; }
     private double cellHeight(){ return canvas.getHeight()/rowCount; }
-
+    public int[] paintPlayerStartPosition(){
+        Random random = new Random();
+        int[] results = new int[2];
+        int column = random.nextInt(19)+1;
+        int row = random.nextInt(19)+1;
+        canvas.getGraphicsContext2D().setFill(Color.BLUE);
+        canvas.getGraphicsContext2D().fillRect(column*cellWidth(),row*cellHeight(),cellWidth(),cellHeight());
+        results[0] = column;
+        results[1] = row;
+        return results;
+    }
     public void paintToken(int column, int row) {
+        Random random = new Random();
         canvas.getGraphicsContext2D().setFill(Color.BLUE);
         canvas.getGraphicsContext2D().fillRect(column*cellWidth(),row*cellHeight(),cellWidth(),cellHeight());
     }

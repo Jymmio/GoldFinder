@@ -42,9 +42,9 @@ public class Controller {
         pausePane = pauseEnable;
         score.setText("0");
         gridView.repaint();
-        column = 10; row = 10;
+        int[] rowCol = gridView.paintPlayerStartPosition();
+        column = rowCol[0]; row = rowCol[1];
         isPaused = false;
-        gridView.paintToken(column, row);
         anchorPane.getChildren().remove(pauseEnable);
         if(anchorPane.getChildren().contains(pausedText))
             anchorPane.getChildren().remove(pausedText);

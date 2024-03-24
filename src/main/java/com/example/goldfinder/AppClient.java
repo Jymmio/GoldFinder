@@ -6,6 +6,9 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
 import java.net.URL;
 
 public class AppClient extends javafx.application.Application {
@@ -50,7 +53,10 @@ public class AppClient extends javafx.application.Application {
         primaryStage.show();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         launch(args);
+        Socket s = new Socket("localhost", 1234);
+        InputStream is = s.getInputStream();
+        OutputStream os = s.getOutputStream();
     }
 }
