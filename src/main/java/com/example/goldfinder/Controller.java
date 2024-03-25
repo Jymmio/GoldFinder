@@ -23,7 +23,9 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
 
@@ -31,6 +33,9 @@ import static com.example.goldfinder.server.AppServer.COLUMN_COUNT;
 import static com.example.goldfinder.server.AppServer.ROW_COUNT;
 
 public class Controller {
+    private Socket socket = new Socket("localhost", 1234);
+    private InputStream is = socket.getInputStream();
+    private OutputStream os = socket.getOutputStream();
     private String playerName = "";
     private Stage stage;
     private static final String VIEW_RESOURCE_PATH = "/com/example/goldfinder/gridView.fxml";
@@ -58,9 +63,12 @@ public class Controller {
     int column, row;
     boolean isPaused;
 
+    public Controller() throws IOException {
+    }
+
 
     /*
-    Socket s = new Socket("localhost", 1234);
+
     InputStream is = s.getInputStream();
     OutputStream os = s.getOutputStream();*/
     public void setStage(Stage stage) {
@@ -81,15 +89,17 @@ public class Controller {
         gameController.initializeGame();
         root.setOnKeyPressed(gameController::handleMove);
     }
-    public void initializeGame(){
+    public void initializeGame() throws IOException {
         this.gridView = new GridView(gridCanvas, COLUMN_COUNT, ROW_COUNT);
         pausePane = pauseEnable;
         score.setText("0");
         scoreName.setText(playerName);
         System.out.println(playerName);
         gridView.repaint();
-        int[] rowCol = gridView.paintPlayerStartPosition();
-        column = rowCol[0]; row = rowCol[1];
+        column = is.read();
+        row = is.read();
+        System.out.println("c.row : " + row + " | c.col : " + column);
+        gridView.paintPlayerStartPosition(column, row);
         isPaused = false;
         anchorPane.getChildren().remove(pauseEnable);
         if(anchorPane.getChildren().contains(pausedText))
@@ -135,7 +145,7 @@ public class Controller {
     public void oneStepButtonAction(ActionEvent actionEvent) {
     }
 
-    public void restartButtonAction(ActionEvent actionEvent) {
+    public void restartButtonAction(ActionEvent actionEvent) throws IOException {
         initializeGame();
     }
 
