@@ -15,7 +15,6 @@ public class AppServer extends Thread{
     public static final int  ROW_COUNT = 20;
     public static final int COLUMN_COUNT = 20;
     final static int serverPort = 1234;
-    int discoveredWallsCounter = 0;
     ArrayList<RunPlayer> runPlayers = new ArrayList<>();
     ArrayList<Player> players = new ArrayList<>();
 
@@ -37,8 +36,9 @@ public class AppServer extends Thread{
                 players.add(rp.player);
                 runPlayers.add(rp);
                 String msg = rp.br.readLine();
-                if(msg.equals("GAME_JOIN")) {
+                if(msg.startsWith("GAME_JOIN")) {
                     System.out.println(msg);
+                    rp.player.setName(msg.split(":")[1].split(" ")[0]);
                     gameJoinCounter++;
                 }
                 if(gameJoinCounter>1){
@@ -65,6 +65,8 @@ public class AppServer extends Thread{
         Player player;
 
         boolean canBroadcast = false;
+
+        int discoveredWallsCounter = 0;
         public RunPlayer(Socket socket, Grid grid) throws IOException {
             this.playerSocket = socket;
             this.pw = new PrintWriter(playerSocket.getOutputStream(), true);
@@ -81,6 +83,8 @@ public class AppServer extends Thread{
             String down = "";
             String left = "";
             String right = "";
+            int amountOfWalls = grid.countWalls();
+            int amountOfGold = grid.goldCounter();
             try {
                 while(true){
                     requestAnswer = "";
@@ -89,6 +93,9 @@ public class AppServer extends Thread{
                         player.generatePlayerPosition(grid);
                     }
                     if(clientRequest.equals("SURROUNDING")){
+                        if (discoveredWallsCounter == amountOfWalls && this.player.score == amountOfGold) {
+                            pw.println("GAME_END " + this.player.getName() + ":" + this.player.score);
+                        } else {
                         SurroundingSearcher surrssearch = new SurroundingSearcher(player.x, player.y, grid, players);
                         requestAnswer = surrssearch.searcher();
                         up = surrssearch.getUp();
@@ -124,7 +131,7 @@ public class AppServer extends Thread{
                             }
                         }
                         pw.println(requestAnswer);
-                    }
+                    }}
                     if (clientRequest.startsWith("UP")) {
                         pw.println(moveUpRequestAnswer(up));
                     }

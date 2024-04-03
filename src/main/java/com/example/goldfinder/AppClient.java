@@ -49,23 +49,28 @@ public class AppClient extends javafx.application.Application {
         Controller controller = loader.getController();
         ConnectedPlayer connectedPlayer = new ConnectedPlayer(pw,br,controller);
         controller.setConnectedPlayer(connectedPlayer);
-        view.setOnKeyPressed(event -> {
+        /*view.setOnKeyPressed(event -> {
             try {
                 controller.handleMove(event);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        });
+        });*/   //Removed for task 3.
         controller.initializeGame();
         controller.play.setOnAction((event) -> {
             try{
-                pw.println("GAME_JOIN");
+                String name = (controller.textField.getText());
+                System.out.println(name);
+                pw.println("GAME_JOIN:" + name + " END");
                 String res = br.readLine();
                 if (res.startsWith("GAME_START")) {
+                    controller.setPlayer(name);
                     controller.startGame();
                 }
             }catch (IOException e){
                 e.printStackTrace();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
         });
     }

@@ -11,7 +11,7 @@ public class Player{
     int y;
     String name;
     int id;
-    int score;
+    public int score;
     private final PrintWriter pw;
     public Player(PrintWriter pw, String name){
         this.pw = pw;

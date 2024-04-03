@@ -20,6 +20,7 @@ import java.io.*;
 
 import static com.example.goldfinder.server.AppServer.COLUMN_COUNT;
 import static com.example.goldfinder.server.AppServer.ROW_COUNT;
+import static java.lang.Thread.sleep;
 
 public class Controller {
     ConnectedPlayer connectedPlayer;
@@ -68,14 +69,16 @@ public class Controller {
     public void setConnectedPlayer(ConnectedPlayer connectedPlayer){
         this.connectedPlayer = connectedPlayer;
     }
+    public void setPlayer(String name) throws IOException {
+        connectedPlayer.setPlayer(name);
+    }
     public void initializeGame() throws IOException {
         anchorPane.getChildren().remove(hbox);
         anchorPane.getChildren().remove(endPane);
         anchorPane.getChildren().remove(pausePane);
     }
     @FXML
-    public void startGame() throws IOException{
-        connectedPlayer.setPlayer(textField.getText());
+    public void startGame() throws IOException, InterruptedException {
         anchorPane.getChildren().remove(startPane);
         anchorPane.getChildren().add(hbox);
         this.gridView = new GridView(gridCanvas, COLUMN_COUNT, ROW_COUNT);
@@ -85,7 +88,9 @@ public class Controller {
         isPaused = false;
         score.setText(connectedPlayer.player.scoreProperty().getValue().toString());
         score.textProperty().bind(connectedPlayer.player.scoreProperty().asString());
-        connectedPlayer.sendSurroundingRequest();
+        //connectedPlayer.sendSurroundingRequest();
+        BotPlayer botPlayer = new BotPlayer(this.connectedPlayer);
+        botPlayer.start();
     }
 
     public void pauseToggleButtonAction(ActionEvent actionEvent) {
@@ -115,7 +120,7 @@ public class Controller {
         initializeGame();
     }
 
-    public void handleMove(KeyEvent keyEvent) throws IOException{
+    public void handleMove(KeyEvent keyEvent) throws IOException, InterruptedException {
         if(isPaused)
             return;
         switch (keyEvent.getCode()) {

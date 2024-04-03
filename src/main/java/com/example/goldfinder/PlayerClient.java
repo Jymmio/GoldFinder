@@ -41,6 +41,7 @@ public class PlayerClient {
     }
     public void generatePlayerPosition() throws IOException {
         pw.println("PLAYER_GENERATE_POSITION");
+        System.out.println("sent position request");
         String colString = br.readLine();
         System.out.println("col reçu : " + colString);
         this.x = Integer.parseInt(colString);

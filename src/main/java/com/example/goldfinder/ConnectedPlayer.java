@@ -15,6 +15,7 @@ public class ConnectedPlayer {
     BufferedReader br;
     PrintWriter pw;
     String upSurrounding,downSurrounding,rightSurrounding,leftSurrounding;
+
     public ConnectedPlayer(PrintWriter pw, BufferedReader br, Controller c){
         this.br = br;
         this.pw = pw;

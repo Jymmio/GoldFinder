@@ -25,7 +25,6 @@ public class GridView {
 
     public void repaint(int playerColumn, int playerRow, ArrayList<ArrayList<Integer>> allPlayers){
         if(allPlayers != null){
-            System.out.println("!= null");
             for(ArrayList<Integer> playerPos : allPlayers){
                 System.out.println("voisin_col : " + playerPos.get(0) + " voisin_row : " + playerPos.get(1));
                 paintToken2(playerPos.get(0),playerPos.get(1));
