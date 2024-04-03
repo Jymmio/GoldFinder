@@ -59,6 +59,7 @@ public class Controller {
     Pane pausePane;
     Text pausedText;
     boolean isPaused;
+    BotPlayer botPlayer;
 
     public Controller() throws IOException {
     }
@@ -89,10 +90,14 @@ public class Controller {
         score.setText(connectedPlayer.player.scoreProperty().getValue().toString());
         score.textProperty().bind(connectedPlayer.player.scoreProperty().asString());
         //connectedPlayer.sendSurroundingRequest();
-        BotPlayer botPlayer = new BotPlayer(this.connectedPlayer);
+        botPlayer = new BotPlayer(this.connectedPlayer);
         botPlayer.start();
     }
-
+    public void shutDownBot(){
+        if(botPlayer != null){
+            botPlayer.stop();
+        }
+    }
     public void pauseToggleButtonAction(ActionEvent actionEvent) {
         isPaused = true;
         anchorPane.getChildren().add(pausePane);

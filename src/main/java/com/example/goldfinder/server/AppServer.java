@@ -1,7 +1,7 @@
 package com.example.goldfinder.server;
 
 
-import com.example.goldfinder.PlayerClient;
+
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -17,51 +17,62 @@ public class AppServer extends Thread{
     final static int serverPort = 1234;
     ArrayList<RunPlayer> runPlayers = new ArrayList<>();
     ArrayList<Player> players = new ArrayList<>();
+    public int gameJoinCounter = 0;
+    String startMessage = "GAME_START ";
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args){
         new AppServer().start();
     }
 
     @Override
     public void run() {
+        ServerSocket ss = null;
         try {
-            ServerSocket ss = new ServerSocket(serverPort);
-            Grid grid = new Grid(COLUMN_COUNT, ROW_COUNT, new Random());
+            ss = new ServerSocket(serverPort);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Grid grid = new Grid(COLUMN_COUNT, ROW_COUNT, new Random());
             System.out.println("server should be listening on port " + serverPort);
-            int gameJoinCounter = 0;
             RunPlayer rp;
             while (true) {
-                Socket s = ss.accept();
-                rp = new RunPlayer(s, grid);
+                Socket s = null;
+                try {
+                    s = ss.accept();
+                    rp = new RunPlayer(s, grid);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 players.add(rp.player);
                 runPlayers.add(rp);
-                String msg = rp.br.readLine();
+                String msg = null;
+                try {
+                    msg = rp.br.readLine();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 if(msg.startsWith("GAME_JOIN")) {
                     System.out.println(msg);
                     rp.player.setName(msg.split(":")[1].split(" ")[0]);
                     gameJoinCounter++;
+                    rp.start();
                 }
                 if(gameJoinCounter>1){
-                    String startMessage = "GAME_START ";
                     for (RunPlayer runp : runPlayers){
                         startMessage+= runp.player.name;
                     }
-                    for(RunPlayer runp: runPlayers){
+                    for(RunPlayer runp : runPlayers){
                         runp.pw.println(startMessage);
-                        runp.start();
                     }
                 }
             }
-        }catch (IOException e){
-            e.printStackTrace();
         }
-    }
 
     public class RunPlayer extends Thread {
         Grid grid;
         private Socket playerSocket;
-        private PrintWriter pw;
-        private BufferedReader br;
+        protected PrintWriter pw;
+        protected BufferedReader br;
         Player player;
 
         boolean canBroadcast = false;
@@ -85,70 +96,74 @@ public class AppServer extends Thread{
             String right = "";
             int amountOfWalls = grid.countWalls();
             int amountOfGold = grid.goldCounter();
-            try {
-                while(true){
-                    requestAnswer = "";
-                    clientRequest = br.readLine();
-                    if(clientRequest.equals("PLAYER_GENERATE_POSITION")){
-                        player.generatePlayerPosition(grid);
-                    }
-                    if(clientRequest.equals("SURROUNDING")){
-                        if (discoveredWallsCounter == amountOfWalls && this.player.score == amountOfGold) {
-                            pw.println("GAME_END " + this.player.getName() + ":" + this.player.score);
-                        } else {
-                        SurroundingSearcher surrssearch = new SurroundingSearcher(player.x, player.y, grid, players);
-                        requestAnswer = surrssearch.searcher();
-                        up = surrssearch.getUp();
-                        down = surrssearch.getDown();
-                        right = surrssearch.getRight();
-                        left = surrssearch.getLeft();
-                        if (up.equals("INVALIDMOVE")) {
-                            if (!grid.ishWallVisited(player.x, player.y)) {
-                                grid.sethWallVisited(player.x, player.y);
-                                discoveredWallsCounter++;
-                            }
+            while (true) {
+                if(gameJoinCounter>1){
+                    try {
+                        requestAnswer = "";
+                        clientRequest = br.readLine();
+                        if (clientRequest.equals("PLAYER_GENERATE_POSITION")) {
+                            player.generatePlayerPosition(grid);
                         }
-                        if (down.equals("INVALIDMOVE")) {
-                            if (player.y < 19) {
-                                if (!grid.ishWallVisited(player.x, player.y + 1)) {
-                                    grid.sethWallVisited(player.x, player.y + 1);
-                                    discoveredWallsCounter++;
+                        if (clientRequest.equals("SURROUNDING")) {
+                            if (discoveredWallsCounter == amountOfWalls && this.player.score == amountOfGold) {
+                                pw.println("GAME_END " + this.player.getName() + ":" + this.player.score);
+                            } else {
+                                SurroundingSearcher surrssearch = new SurroundingSearcher(player.x, player.y, grid, players);
+                                requestAnswer = surrssearch.searcher();
+                                up = surrssearch.getUp();
+                                down = surrssearch.getDown();
+                                right = surrssearch.getRight();
+                                left = surrssearch.getLeft();
+                                if (up.equals("INVALIDMOVE")) {
+                                    if (!grid.ishWallVisited(player.x, player.y)) {
+                                        grid.sethWallVisited(player.x, player.y);
+                                        discoveredWallsCounter++;
+                                    }
                                 }
-                            }
-                        }
-                        if (left.equals("INVALIDMOVE")) {
-                            if (!grid.isvWallVisited(player.x, player.y)) {
-                                grid.setvWallVisited(player.x, player.y);
-                                discoveredWallsCounter++;
-                            }
-                        }
-                        if (right.equals("INVALIDMOVE")) {
-                            if (player.x < 19) {
-                                if (!grid.isvWallVisited(player.x + 1, player.y)) {
-                                    grid.setvWallVisited(player.x + 1, player.y);
-                                    discoveredWallsCounter++;
+                                if (down.equals("INVALIDMOVE")) {
+                                    if (player.y < 19) {
+                                        if (!grid.ishWallVisited(player.x, player.y + 1)) {
+                                            grid.sethWallVisited(player.x, player.y + 1);
+                                            discoveredWallsCounter++;
+                                        }
+                                    }
                                 }
+                                if (left.equals("INVALIDMOVE")) {
+                                    if (!grid.isvWallVisited(player.x, player.y)) {
+                                        grid.setvWallVisited(player.x, player.y);
+                                        discoveredWallsCounter++;
+                                    }
+                                }
+                                if (right.equals("INVALIDMOVE")) {
+                                    if (player.x < 19) {
+                                        if (!grid.isvWallVisited(player.x + 1, player.y)) {
+                                            grid.setvWallVisited(player.x + 1, player.y);
+                                            discoveredWallsCounter++;
+                                        }
+                                    }
+                                }
+                                pw.println(requestAnswer);
                             }
                         }
-                        pw.println(requestAnswer);
-                    }}
-                    if (clientRequest.startsWith("UP")) {
-                        pw.println(moveUpRequestAnswer(up));
-                    }
-                    if (clientRequest.startsWith("DOWN")) {
-                        pw.println(moveDownRequestAnswer(down));
-                    }
-                    if (clientRequest.startsWith("LEFT")) {
-                        pw.println(moveLeftRequestAnswer(left));
-                    }
-                    if (clientRequest.startsWith("RIGHT")) {
-                        pw.println(moveRightRequestAnswer(right));
+                        if (clientRequest.startsWith("UP")) {
+                            pw.println(moveUpRequestAnswer(up));
+                        }
+                        if (clientRequest.startsWith("DOWN")) {
+                            pw.println(moveDownRequestAnswer(down));
+                        }
+                        if (clientRequest.startsWith("LEFT")) {
+                            pw.println(moveLeftRequestAnswer(left));
+                        }
+                        if (clientRequest.startsWith("RIGHT")) {
+                            pw.println(moveRightRequestAnswer(right));
+                        }
+                    } catch (SocketException e) {
+                        System.out.println("PLAYER DISCONNECTED !");
+                        break;
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
-            } catch(SocketException e){
-                System.out.println("PLAYER DISCONNECTED !");
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
         public String moveDownRequestAnswer(String down){

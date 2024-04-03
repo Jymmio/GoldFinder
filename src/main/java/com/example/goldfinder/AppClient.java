@@ -62,6 +62,7 @@ public class AppClient extends javafx.application.Application {
                 String name = (controller.textField.getText());
                 System.out.println(name);
                 pw.println("GAME_JOIN:" + name + " END");
+
                 String res = br.readLine();
                 if (res.startsWith("GAME_START")) {
                     controller.setPlayer(name);
@@ -72,6 +73,10 @@ public class AppClient extends javafx.application.Application {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
+        });
+        primaryStage.setOnCloseRequest(event -> {
+            System.out.println("Fermeture de la fenetre ...");
+            controller.shutDownBot();
         });
     }
 

@@ -36,13 +36,15 @@ public class Player{
 
     public void generatePlayerPosition(Grid grid) throws IOException {
         Random random = new Random();
+        int column;
+        int row;
         do{
-            int column = random.nextInt(19) + 1;
-            pw.println(String.valueOf(column));
+            column = random.nextInt(19) + 1;
             this.x = column;
-            int row = random.nextInt(19) + 1;
-            pw.println(String.valueOf(row));
+            row = random.nextInt(19) + 1;
             this.y = row;
         }while(grid.hasGold(this.x,this.y));
+        pw.println(String.valueOf(column));
+        pw.println(String.valueOf(row));
     }
 }

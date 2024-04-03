@@ -6,14 +6,13 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class BotPlayer {
-
     ConnectedPlayer connectedPlayer;
+    Timer timer = new Timer();
     public BotPlayer(ConnectedPlayer cp){
         this.connectedPlayer = cp;
     }
 
     public void start() {
-        Timer timer = new Timer();
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
@@ -34,5 +33,12 @@ public class BotPlayer {
             }
         };
         timer.schedule(task, 0, 50);
+    }
+    public void stop() {
+        if (timer != null) {
+            timer.cancel();
+            timer.purge();
+            timer = null;
+        }
     }
 }
