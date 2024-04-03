@@ -2,14 +2,10 @@ package com.example.goldfinder;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
@@ -19,26 +15,25 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
-import javafx.stage.Stage;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URL;
+import java.io.*;
 
 import static com.example.goldfinder.server.AppServer.COLUMN_COUNT;
 import static com.example.goldfinder.server.AppServer.ROW_COUNT;
 
 public class Controller {
-    private Socket socket = new Socket("localhost", 1234);
-    private InputStream is = socket.getInputStream();
-    private OutputStream os = socket.getOutputStream();
-    private String playerName = "";
-    private Stage stage;
+    ConnectedPlayer connectedPlayer;
+
     private static final String VIEW_RESOURCE_PATH = "/com/example/goldfinder/gridView.fxml";
+
+    public GridView gridView;
+    PrintWriter pw;
+    BufferedReader br;
+    String upSurrounding;
+    String downSurrounding;
+    String leftSurrounding;
+    String rightSurrounding;
+    PlayerClient player;
     @FXML
     Button play;
     @FXML
@@ -56,54 +51,41 @@ public class Controller {
     @FXML
     Label score;
     @FXML
-    Pane pauseEnable;
+    Pane startPane;
+    @FXML
+    Pane endPane;
+    @FXML
     Pane pausePane;
     Text pausedText;
-    GridView gridView;
-    int column, row;
     boolean isPaused;
 
     public Controller() throws IOException {
     }
-
-
-    /*
-
-    InputStream is = s.getInputStream();
-    OutputStream os = s.getOutputStream();*/
-    public void setStage(Stage stage) {
-        this.stage = stage;
+    public void setPwAndBr(PrintWriter pw, BufferedReader br){
+        this.pw = pw;
+        this.br = br;
     }
-    @FXML
-    public void switchGameScene() throws IOException{
-        FXMLLoader loader = new FXMLLoader();
-        URL location = AppClient.class.getResource(VIEW_RESOURCE_PATH);
-        loader.setLocation(location);
-        Parent root = loader.load();
-        Scene scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
-
-        Controller gameController = loader.getController();
-        gameController.setPlayerName(textField.getText());
-        gameController.initializeGame();
-        root.setOnKeyPressed(gameController::handleMove);
+    public void setConnectedPlayer(ConnectedPlayer connectedPlayer){
+        this.connectedPlayer = connectedPlayer;
     }
     public void initializeGame() throws IOException {
+        anchorPane.getChildren().remove(hbox);
+        anchorPane.getChildren().remove(endPane);
+        anchorPane.getChildren().remove(pausePane);
+    }
+    @FXML
+    public void startGame() throws IOException{
+        connectedPlayer.setPlayer(textField.getText());
+        anchorPane.getChildren().remove(startPane);
+        anchorPane.getChildren().add(hbox);
         this.gridView = new GridView(gridCanvas, COLUMN_COUNT, ROW_COUNT);
-        pausePane = pauseEnable;
         score.setText("0");
-        scoreName.setText(playerName);
-        System.out.println(playerName);
-        gridView.repaint();
-        column = is.read();
-        row = is.read();
-        System.out.println("c.row : " + row + " | c.col : " + column);
-        gridView.paintPlayerStartPosition(column, row);
+        scoreName.setText(connectedPlayer.player.getName());
+        gridView.repaint(connectedPlayer.player.x,connectedPlayer.player.y,null);
         isPaused = false;
-        anchorPane.getChildren().remove(pauseEnable);
-        if(anchorPane.getChildren().contains(pausedText))
-            anchorPane.getChildren().remove(pausedText);
+        score.setText(connectedPlayer.player.scoreProperty().getValue().toString());
+        score.textProperty().bind(connectedPlayer.player.scoreProperty().asString());
+        connectedPlayer.sendSurroundingRequest();
     }
 
     public void pauseToggleButtonAction(ActionEvent actionEvent) {
@@ -111,35 +93,19 @@ public class Controller {
         anchorPane.getChildren().add(pausePane);
         double canvasWidth = gridCanvas.getWidth();
         double canvasHeight = gridCanvas.getHeight();
-
-        // Définir le texte à afficher
         String message = "Paused";
-
-        // Créer l'élément Text
         pausedText = new Text(message);
-
-        // Définir le style du texte (vous pouvez ajuster selon vos préférences)
         pausedText.setFill(Color.WHITE);
         pausedText.setFont(Font.font("Arial", FontWeight.BOLD, 96));
-
-        // Positionner le texte au centre du Canvas
         pausedText.setX(vbox.getLayoutBounds().getWidth() + (canvasWidth - pausedText.getLayoutBounds().getWidth()) / 2);
         pausedText.setY((canvasHeight + pausedText.getLayoutBounds().getHeight()) / 2);
-
-        // Ajouter le texte au Canvas
         anchorPane.getChildren().add(pausedText);
-        System.out.println(anchorPane.getChildren());
     }
 
     public void playToggleButtonAction(ActionEvent actionEvent) {
         isPaused = false;
-        if(anchorPane.getChildren().contains(pausePane))
-            anchorPane.getChildren().remove(pausePane);
-        if(anchorPane.getChildren().contains(pausedText))
-            anchorPane.getChildren().remove(pausedText);
-        String tempScoreText = score.getText();
-        Integer tempScore = Integer.valueOf(tempScoreText) + 1;
-        score.setText(tempScore.toString());
+        anchorPane.getChildren().remove(pausePane);
+        anchorPane.getChildren().remove(pausedText);
     }
 
     public void oneStepButtonAction(ActionEvent actionEvent) {
@@ -149,20 +115,34 @@ public class Controller {
         initializeGame();
     }
 
-    public void handleMove(KeyEvent keyEvent) {
+    public void handleMove(KeyEvent keyEvent) throws IOException{
         if(isPaused)
             return;
         switch (keyEvent.getCode()) {
-            case Z -> row = Math.max(0, row - 1);
-            case Q -> column = Math.max(0, column - 1);
-            case S -> row = Math.min(ROW_COUNT - 1, row + 1);
-            case D -> column = Math.min(COLUMN_COUNT - 1, column + 1);
+            case Z -> {
+                connectedPlayer.moveUp();
+            }
+            case Q -> {
+                connectedPlayer.moveLeft();
+            }
+            case S -> {
+                connectedPlayer.moveDown();
+            }
+            case D -> {
+                connectedPlayer.moveRight();
+            }
         }
-        gridView.repaint();
-        gridView.paintToken(column, row);
+        connectedPlayer.sendSurroundingRequest();
     }
-    public void setPlayerName(String name){
-        this.playerName = name;
+
+
+
+    public void switchGameEnd(){
+        double canvasWidth = gridCanvas.getWidth();
+        double canvasHeight = gridCanvas.getHeight();
+        gridCanvas.setVisible(false);
+        anchorPane.getChildren().add(endPane);
+        endPane.setVisible(true);
     }
 }
 
