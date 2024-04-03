@@ -3,6 +3,7 @@ package com.example.goldfinder;
 import com.example.goldfinder.Controller;
 import com.example.goldfinder.GridView;
 import com.example.goldfinder.PlayerClient;
+import javafx.application.Platform;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -32,7 +33,7 @@ public class ConnectedPlayer {
             player.y--;
             if(upSurrounding.split(":")[1].equals("GOLD")) {
                 controller.gridView.goldAt[player.x][player.y] = false;
-                player.scoreIncrement();
+                Platform.runLater(() -> {player.scoreIncrement();});
             }
         }
     }
@@ -44,7 +45,7 @@ public class ConnectedPlayer {
             player.x--;
             if(leftSurrounding.split(":")[1].equals("GOLD")) {
                 controller.gridView.goldAt[player.x][player.y] = false;
-                player.scoreIncrement();
+                Platform.runLater(() -> {player.scoreIncrement();});
             }
         }
     }
@@ -56,7 +57,7 @@ public class ConnectedPlayer {
             player.y++;
             if(downSurrounding.split(":")[1].equals("GOLD")) {
                 controller.gridView.goldAt[player.x][player.y] = false;
-                player.scoreIncrement();
+                Platform.runLater(() -> {player.scoreIncrement();});
             }
         }
     }
@@ -68,7 +69,7 @@ public class ConnectedPlayer {
             player.x++;
             if(rightSurrounding.split(":")[1].equals("GOLD")) {
                 controller.gridView.goldAt[player.x][player.y] = false;
-                player.scoreIncrement();
+                Platform.runLater(() -> {player.scoreIncrement();});
             }
         }
     }

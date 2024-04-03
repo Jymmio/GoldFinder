@@ -78,6 +78,9 @@ public class Controller {
         anchorPane.getChildren().remove(endPane);
         anchorPane.getChildren().remove(pausePane);
     }
+    public void showLoading(){
+
+    }
     @FXML
     public void startGame() throws IOException, InterruptedException {
         anchorPane.getChildren().remove(startPane);
