@@ -23,7 +23,7 @@ public class LeaderBoardFile {
 
     public static void writeOnFile(String text) throws IOException {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(SOURCE_FILE_PATH))) {
-            bw.write(text);
+            bw.write(text + "\n");
         }
     }
 }

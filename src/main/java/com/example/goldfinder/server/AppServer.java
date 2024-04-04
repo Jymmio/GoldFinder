@@ -7,8 +7,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Random;
+import java.util.*;
 
 
 public class AppServer extends Thread{
@@ -29,14 +28,6 @@ public class AppServer extends Thread{
 
     @Override
     public void run() {
-        try {
-            LeaderBoardFile.writeOnFile("Hello World");
-            String text = LeaderBoardFile.readFile();
-            System.out.println("It wrote something : " + text);
-        } catch (IOException e) {
-            System.err.println("Échec de l'écriture dans le fichier : " + e.getMessage());
-            e.printStackTrace();
-        }
         ServerSocket ss = null;
         try {
             ss = new ServerSocket(serverPort);
@@ -79,7 +70,7 @@ public class AppServer extends Thread{
                             startMessage+= runp.player.name + ":" + runp.player.id + " ";
                         }
                         startMessage += " END";
-                        System.out.println("START MESSAGE UPDATED");
+                        System.out.println("START MESSAGE UPDATED : " + startMessage);
                         break;
                     }
                 }
@@ -88,8 +79,12 @@ public class AppServer extends Thread{
     public int getGameJoinCounter(){
         return this.gameJoinCounter;
     }
+    public String getStartMessage(){
+        return this.startMessage;
+    }
 
     public class RunPlayer extends Thread {
+        HashMap<String,Integer> playerLeaderScore;
         Grid grid;
         private Socket playerSocket;
         protected PrintWriter pw;
@@ -116,14 +111,14 @@ public class AppServer extends Thread{
             boolean isStartMessageSent = false;
             int amountOfWalls = grid.countWalls();
             int amountOfGold = grid.goldCounter();
-            int amountOfPlayers;
             while (true) {
                 while(!isStartMessageSent){
-                    if((amountOfPlayers = getGameJoinCounter()) >=2 && startMessage.endsWith("END")) {
+                    if(getGameJoinCounter() >=2 && getStartMessage().endsWith("END")) {
                         System.out.println("response for " + player.name + " : " + startMessage);
                         pw.println(startMessage);
                         isStartMessageSent = true;
                     }
+                    System.out.print("");
                 }
                 try {
                     requestAnswer = "";
@@ -134,6 +129,7 @@ public class AppServer extends Thread{
                     if (clientRequest.equals("SURROUNDING")) {
                         if (discoveredWallsCounter == amountOfWalls && this.player.score == amountOfGold) {
                             pw.println("GAME_END " + this.player.getName() + ":" + this.player.score);
+                            playerLeaderScore.put(this.player.name,this.player.score);
                         } else {
                             SurroundingSearcher surrssearch = new SurroundingSearcher(player.x, player.y, grid, players);
                             requestAnswer = surrssearch.searcher();
@@ -171,6 +167,9 @@ public class AppServer extends Thread{
                             }
                             pw.println(requestAnswer);
                         }
+                    }
+                    if(clientRequest.startsWith("LEADERBOARD")){
+                        //to_complete
                     }
                     if (clientRequest.startsWith("UP")) {
                         pw.println(moveUpRequestAnswer(up));
