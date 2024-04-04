@@ -11,16 +11,18 @@ import java.util.*;
 
 
 public class AppServer extends Thread{
+    private final int MAX_PLAYERS = 4;
     public static final int  ROW_COUNT = 20;
     public static final int COLUMN_COUNT = 20;
     final static int serverPort = 1234;
-    protected int startDelay = 10000;
+    protected int startDelay = 2000;
     protected long startTime;
     ArrayList<RunPlayer> runPlayers = new ArrayList<>();
     ArrayList<Player> players = new ArrayList<>();
     public int gameJoinCounter = 0;
     String startMessage = "GAME_START ";
     private boolean isTimeStartSet = false;
+    public boolean allPlayersReady = false;
 
     public static void main(String[] args){
         new AppServer().start();
@@ -35,76 +37,44 @@ public class AppServer extends Thread{
             throw new RuntimeException(e);
         }
         Grid grid = new Grid(COLUMN_COUNT, ROW_COUNT, new Random());
-            System.out.println("server should be listening on port " + serverPort);
-            RunPlayer rp;
-            while (true) {
-                Socket s = null;
-                try {
-                    s = ss.accept();
-                    rp = new RunPlayer(s, grid, gameJoinCounter);
-                    rp.start();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                players.add(rp.player);
-                runPlayers.add(rp);
-                String msg = "";
-                do{
-                    try {
-                        msg = rp.br.readLine();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    if (msg.startsWith("LEADER")) {
-                        HashMap<String, Integer> hash;
-                        LeaderBoardHandler lbh = new LeaderBoardHandler(rp.playerLeaderScore);
-                        try {
-                            hash = lbh.gameLeaderboardBuilder();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                        if (hash.size() > 0) {
-                            for (Map.Entry<String, Integer> entry : hash.entrySet()) {
-                                rp.pw.println("SCORE:" + entry.getKey() + ":" + entry.getValue());
-                            }
-                            rp.pw.println("END");
-                        } else {
-                            rp.pw.println("NO_LEADERS");
-                        }
-                    }
-                    if (msg.startsWith("GAME_JOIN")) {
-                        System.out.println(msg);
-                        rp.player.setName(msg.split(":")[1].split(" ")[0]);
-                        gameJoinCounter++;
-                    }
-                }while (!msg.startsWith("GAME_JOIN"));
-                while(gameJoinCounter>=2){
-                    if(!isTimeStartSet){
-                        startTime = System.currentTimeMillis();
-                        System.out.println("start time : " + startTime);
-                        isTimeStartSet = true;
-                    }
-                    if(((System.currentTimeMillis() - startTime) >= startDelay) || gameJoinCounter == 4) {
-                        for (RunPlayer runp : runPlayers) {
-                            startMessage+= runp.player.name + ":" + runp.player.id + " ";
-                        }
-                        startMessage += " END";
-                        System.out.println("START MESSAGE UPDATED : " + startMessage);
-                        break;
-                    }
-                }
+        System.out.println("server should be listening on port " + serverPort);
+        RunPlayer rp;
+        int i=0;
+        while (gameJoinCounter < MAX_PLAYERS) {
+            Socket s = null;
+            try {
+                s = ss.accept();
+                rp = new RunPlayer(s, grid, i);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        }
+            players.add(rp.player);
+            runPlayers.add(rp);
+            }
+    }
+    public void setAllPlayersReady(boolean x){
+        this.allPlayersReady = x;
+    }
+    public boolean getAllPlayersReady(){
+        return this.allPlayersReady;
+    }
+    public void incrementJoinCounter(){
+        this.gameJoinCounter++;
+    }
     public int getGameJoinCounter(){
         return this.gameJoinCounter;
     }
     public String getStartMessage(){
         return this.startMessage;
     }
+    public ArrayList<RunPlayer> getRunPlayers(){
+        return this.runPlayers;
+    }
 
     public class RunPlayer extends Thread {
         HashMap<String,Integer> playerLeaderScore;
         Grid grid;
+        boolean isReady = false;
         private Socket playerSocket;
         protected PrintWriter pw;
         protected BufferedReader br;
@@ -117,11 +87,12 @@ public class AppServer extends Thread{
             this.grid = grid;
             this.player = new Player(pw, "");
             this.player.id = id;
+            start();
         }
         @Override
         public void run(){
             System.out.println("PLAYER : " + player.name +", CONNECTED SUCCESSFULLY");
-            String clientRequest;
+            String clientRequest = "";
             String requestAnswer = "";
             String up = "";
             String down = "";
@@ -131,6 +102,30 @@ public class AppServer extends Thread{
             int amountOfWalls = grid.countWalls();
             int amountOfGold = grid.goldCounter();
             while (true) {
+                while(!isReady){
+                    try {
+                        System.out.println("let's handle this dear n°"+player.id);
+                        handleStartRequests(clientRequest);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                while(true){
+                    if (getRunPlayers().size() >= 2) {
+                        for (RunPlayer rp : getRunPlayers()) {
+                            if (!isReady) {
+                                setAllPlayersReady(false);
+                                break;
+                            }
+                            startMessage += rp.player.name + ":" + rp.player.id + " ";
+                            setAllPlayersReady(true);
+                        }
+                    }
+                    if(getAllPlayersReady()) {
+                        startMessage += "END";
+                        break;
+                    }
+                }
                 while(!isStartMessageSent){
                     if(getGameJoinCounter() >=2 && getStartMessage().endsWith("END")) {
                         System.out.println("response for " + player.name + " : " + startMessage);
@@ -208,6 +203,32 @@ public class AppServer extends Thread{
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            }
+        }
+        public void handleStartRequests(String msg) throws IOException {
+            msg = br.readLine();
+            if (msg.startsWith("LEADER")) {
+                HashMap<String, Integer> hash;
+                LeaderBoardHandler lbh = new LeaderBoardHandler(playerLeaderScore);
+                try {
+                    hash = lbh.gameLeaderboardBuilder();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                if (hash.size() > 0) {
+                    for (Map.Entry<String, Integer> entry : hash.entrySet()) {
+                        pw.println("SCORE:" + entry.getKey() + ":" + entry.getValue());
+                    }
+                    pw.println("END");
+                } else {
+                    pw.println("NO_LEADERS");
+                }
+            }
+            if (msg.startsWith("GAME_JOIN")) {
+                System.out.println(msg);
+                player.setName(msg.split(":")[1].split(" ")[0]);
+                incrementJoinCounter();
+                isReady = true;
             }
         }
         public String moveDownRequestAnswer(String down){
