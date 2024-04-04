@@ -11,7 +11,7 @@ import java.util.*;
 
 
 public class AppServer extends Thread{
-    private final int MAX_PLAYERS = 4;
+    private final int MAX_PLAYERS = 2;
     public static final int  ROW_COUNT = 20;
     public static final int COLUMN_COUNT = 20;
     final static int serverPort = 1234;
@@ -21,7 +21,6 @@ public class AppServer extends Thread{
     ArrayList<Player> players = new ArrayList<>();
     public int gameJoinCounter = 0;
     String startMessage = "GAME_START ";
-    private boolean isTimeStartSet = false;
     public boolean allPlayersReady = false;
 
     public static void main(String[] args){
@@ -36,21 +35,36 @@ public class AppServer extends Thread{
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        while (true){
+            gameJoinCounter = 0;
+            startMessage = "GAME_START ";
+            players = new ArrayList<>();
+            runPlayers = new ArrayList<>();
+            allPlayersReady = false;
+            runAGame(ss);
+        }
+    }
+    public void runAGame(ServerSocket ss) {
         Grid grid = new Grid(COLUMN_COUNT, ROW_COUNT, new Random());
-        System.out.println("server should be listening on port " + serverPort);
         RunPlayer rp;
         int i=0;
         while (gameJoinCounter < MAX_PLAYERS) {
-            Socket s = null;
-            try {
-                s = ss.accept();
-                rp = new RunPlayer(s, grid, i);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                Socket s = null;
+                try {
+                    s = ss.accept();
+                    rp = new RunPlayer(s, grid, i);
+                    i++;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                players.add(rp.player);
+                runPlayers.add(rp);
+                if(gameJoinCounter >=MAX_PLAYERS){
+                    break;
+                }
             }
-            players.add(rp.player);
-            runPlayers.add(rp);
-            }
+        System.out.println("Game started correctly !");
+        return;
     }
     public void setAllPlayersReady(boolean x){
         this.allPlayersReady = x;
@@ -75,7 +89,7 @@ public class AppServer extends Thread{
         HashMap<String,Integer> playerLeaderScore;
         Grid grid;
         boolean isReady = false;
-        private Socket playerSocket;
+        private final Socket playerSocket;
         protected PrintWriter pw;
         protected BufferedReader br;
         Player player;
@@ -111,7 +125,7 @@ public class AppServer extends Thread{
                     }
                 }
                 while(true){
-                    if (getRunPlayers().size() >= 2) {
+                    if (getRunPlayers().size() == MAX_PLAYERS) {
                         for (RunPlayer rp : getRunPlayers()) {
                             if (!isReady) {
                                 setAllPlayersReady(false);
