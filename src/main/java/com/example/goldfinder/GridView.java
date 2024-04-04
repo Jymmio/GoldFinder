@@ -24,14 +24,14 @@ public class GridView {
     }
 
     public void repaint(int playerColumn, int playerRow, ArrayList<ArrayList<Integer>> allPlayers){
+        canvas.getGraphicsContext2D().clearRect(0,0,canvas.getWidth(),canvas.getHeight());
+        paintToken(playerColumn, playerRow);
         if(allPlayers != null){
             for(ArrayList<Integer> playerPos : allPlayers){
                 System.out.println("voisin_col : " + playerPos.get(0) + " voisin_row : " + playerPos.get(1));
                 paintToken2(playerPos.get(0),playerPos.get(1));
             }
         }
-        canvas.getGraphicsContext2D().clearRect(0,0,canvas.getWidth(),canvas.getHeight());
-        paintToken(playerColumn, playerRow);
         for(int column =0; column<columnCount;column++)
             for(int row=0;row<rowCount;row++)
                 if(goldAt[column][row]) {

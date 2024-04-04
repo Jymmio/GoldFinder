@@ -54,8 +54,10 @@ public class AppClient extends javafx.application.Application {
                 controller.handleMove(event);
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-        });*/   //Removed for task 3.
+        }); */  //Removed for task 3.
         controller.initializeGame();
         controller.play.setOnAction((event) -> {
             try{
@@ -64,6 +66,7 @@ public class AppClient extends javafx.application.Application {
                 pw.println("GAME_JOIN:" + name + " END");
 
                 String res = br.readLine();
+                System.out.println("SERVER RESPONSE TO GAME_JOIN : ");
                 if (res.startsWith("GAME_START")) {
                     controller.setPlayer(name);
                     controller.startGame();
