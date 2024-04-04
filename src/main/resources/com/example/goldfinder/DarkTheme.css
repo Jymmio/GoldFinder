@@ -58,6 +58,22 @@
 .table-view:focused .table-row-cell:filled:focused:selected {
     -fx-background-color: -fx-focus-color;
 }
+.table-row-cell:empty {
+    -fx-background-color: transparent; /* Couleur de fond des lignes non sélectionnables */
+}
+
+.table-view .scroll-bar:vertical {
+    -fx-background-color: transparent; /* Couleur de fond de la barre de défilement verticale */
+}
+
+.table-view .scroll-bar:vertical .thumb {
+    -fx-background-color: transparent; /* Couleur de fond du curseur de défilement */
+}
+
+.table-view .scroll-bar:vertical .increment-arrow,
+.table-view .scroll-bar:vertical .decrement-arrow {
+    -fx-background-color: transparent; /* Couleur de fond des flèches de défilement */
+}
 
 .split-pane:horizontal > .split-pane-divider {
     -fx-border-color: transparent #1d1d1d transparent #1d1d1d;

@@ -11,14 +11,14 @@ public class LeaderBoardHandler {
         this.playersScores = playersScores;
     }
 
-    public HashMap<String, Integer> gameLeaderBoardBuilder() throws IOException {
+    public HashMap<String, Integer> gameLeaderboardBuilder() throws IOException {
         String[] oldPlayersScoresString = LeaderBoardFile.readFile().split("\n");
         HashMap<String, Integer> oldPlayersScores = new HashMap<>();
         if(this.playersScores != null){
             oldPlayersScores = this.playersScores;
         }
 
-        if (oldPlayersScoresString.length > 0) {
+        if (oldPlayersScoresString.length > 1) {
             for (String s : oldPlayersScoresString) {
                 String[] parts = s.split(":");
                 String name = parts[0];

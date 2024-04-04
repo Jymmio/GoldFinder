@@ -49,7 +49,7 @@ public class AppClient extends javafx.application.Application {
         Controller controller = loader.getController();
         ConnectedPlayer connectedPlayer = new ConnectedPlayer(pw,br,controller);
         controller.setConnectedPlayer(connectedPlayer);
-        /*view.setOnKeyPressed(event -> {
+        view.setOnKeyPressed(event -> {
             try {
                 controller.handleMove(event);
             } catch (IOException e) {
@@ -57,7 +57,7 @@ public class AppClient extends javafx.application.Application {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-        }); */  //Removed for task 3.
+        });   //Removed for task 3.
         controller.initializeGame();
         controller.play.setOnAction((event) -> {
             try{
@@ -76,6 +76,39 @@ public class AppClient extends javafx.application.Application {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
+        });
+        controller.leaderboardButton.setOnAction((event) -> {
+            pw.println("LEADER:5");
+            String[] leaders = new String[5];
+            try {
+                leaders[0] = br.readLine();
+                if(leaders[0].startsWith("NO")){
+                    controller.showNoLeader();
+                }
+                else{
+                    for(int i=1; i<leaders.length;i++){
+                        leaders[i] = br.readLine();
+                        if(leaders[i].equals("END"))
+                            break;
+                    }
+                    controller.showLeaders(leaders);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        controller.leaderboardButton.setOnMouseEntered(event -> {
+            controller.leaderboardButton.setStyle("-fx-background-color:  rgba(200,200,200,1)");
+        });
+        controller.play.setOnMouseEntered(event -> {
+            controller.play.setStyle("-fx-background-color:  rgba(200,200,200,1)");
+        });
+        controller.leaderboardButton.setOnMouseExited(event -> {
+            controller.leaderboardButton.setStyle("-fx-background-color:  rgba(150,150,150,0.5)");
+        });
+        controller.play.setOnMouseExited(event -> {
+            controller.play.setStyle("-fx-background-color:  rgba(150,150,150,0.5)");
         });
         primaryStage.setOnCloseRequest(event -> {
             System.out.println("Fermeture de la fenetre ...");
