@@ -15,13 +15,13 @@ public class AppServer extends Thread{
     public static final int  ROW_COUNT = 20;
     public static final int COLUMN_COUNT = 20;
     final static int serverPort = 1234;
-    protected int startDelay = 2000;
-    protected long startTime;
-    ArrayList<RunPlayer> runPlayers = new ArrayList<>();
-    ArrayList<Player> players = new ArrayList<>();
-    public int gameJoinCounter = 0;
+    ArrayList<ArrayList<RunPlayer>> allGamesRunPlayers = new ArrayList<>();
+    public volatile ArrayList<ArrayList<Player>> players = new ArrayList<>();
+    public ArrayList<Integer> gameJoinCounter = new ArrayList<>();
     String startMessage = "GAME_START ";
     public boolean allPlayersReady = false;
+    public boolean isGameReadyToStart = true;
+    public volatile boolean started = false;
 
     public static void main(String[] args){
         new AppServer().start();
@@ -29,85 +29,91 @@ public class AppServer extends Thread{
 
     @Override
     public void run() {
-        ServerSocket ss = null;
-        try {
-            ss = new ServerSocket(serverPort);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        while (true){
-            gameJoinCounter = 0;
+            ServerSocket ss;
+            try {
+                ss = new ServerSocket(serverPort);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            int i=1;
+            gameJoinCounter.add(0);
+            players.add(new ArrayList<Player>());
+            System.out.println("Game n°" + i);
             startMessage = "GAME_START ";
-            players = new ArrayList<>();
-            runPlayers = new ArrayList<>();
+            allGamesRunPlayers.add(new ArrayList<>());
             allPlayersReady = false;
-            runAGame(ss);
-        }
+            RunAGame runAGame = new RunAGame(ss, i - 1);
+            i++;
+            while (true) {
+                if(started){
+                    started = false;
+                    gameJoinCounter.add(0);
+                    players.add(new ArrayList<Player>());
+                    System.out.println("Game n°" + i);
+                    startMessage = "GAME_START ";
+                    allGamesRunPlayers.add(new ArrayList<>());
+                    allPlayersReady = false;
+                    runAGame = new RunAGame(ss, i - 1);
+                    i++;
+                }
+            }
     }
-    public void runAGame(ServerSocket ss) {
-        Grid grid = new Grid(COLUMN_COUNT, ROW_COUNT, new Random());
-        RunPlayer rp;
-        int i=0;
-        while (gameJoinCounter < MAX_PLAYERS) {
-                Socket s = null;
+
+    public class RunAGame extends Thread {
+        ServerSocket ss;
+        int gameId;
+        public RunAGame(ServerSocket ss, int gameId){
+            this.ss = ss;
+            this.gameId = gameId;
+            this.start();
+        }
+        @Override
+        public void run() {
+            Socket s;
+            Grid grid = new Grid(COLUMN_COUNT, ROW_COUNT, new Random());
+            RunPlayer rp;
+            int i = 0;
+            while (gameJoinCounter.get(this.gameId) < MAX_PLAYERS) {
                 try {
                     s = ss.accept();
-                    rp = new RunPlayer(s, grid, i);
+                    incrementJoinCounter(this.gameId);
+                    System.out.println(getGameJoinCounter(this.gameId));
+                    rp = new RunPlayer(s, grid, i,this.gameId);
                     i++;
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                players.add(rp.player);
-                runPlayers.add(rp);
-                if(gameJoinCounter >=MAX_PLAYERS){
-                    break;
-                }
+                players.get(this.gameId).add(rp.player);
+                allGamesRunPlayers.get(this.gameId).add(rp);
             }
-        System.out.println("Game started correctly !");
-        return;
-    }
-    public void setAllPlayersReady(boolean x){
-        this.allPlayersReady = x;
-    }
-    public boolean getAllPlayersReady(){
-        return this.allPlayersReady;
-    }
-    public void incrementJoinCounter(){
-        this.gameJoinCounter++;
-    }
-    public int getGameJoinCounter(){
-        return this.gameJoinCounter;
-    }
-    public String getStartMessage(){
-        return this.startMessage;
-    }
-    public ArrayList<RunPlayer> getRunPlayers(){
-        return this.runPlayers;
+            started = true;
+            System.out.println("Game started correctly !");
+        }
     }
 
     public class RunPlayer extends Thread {
         HashMap<String,Integer> playerLeaderScore;
         Grid grid;
+        int gameId;
         boolean isReady = false;
-        private final Socket playerSocket;
         protected PrintWriter pw;
         protected BufferedReader br;
         Player player;
         int discoveredWallsCounter = 0;
-        public RunPlayer(Socket socket, Grid grid, int id) throws IOException {
-            this.playerSocket = socket;
-            this.pw = new PrintWriter(playerSocket.getOutputStream(), true);
-            this.br = new BufferedReader(new InputStreamReader(playerSocket.getInputStream()));
+        public RunPlayer(Socket socket, Grid grid, int id, int gameId) throws IOException {
+            this.pw = new PrintWriter(socket.getOutputStream(), true);
+            this.br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.grid = grid;
             this.player = new Player(pw, "");
             this.player.id = id;
+            this.gameId = gameId;
             start();
         }
         @Override
         public void run(){
             System.out.println("PLAYER : " + player.name +", CONNECTED SUCCESSFULLY");
-            String clientRequest = "";
-            String requestAnswer = "";
+            String clientRequest;
+            String requestAnswer;
             String up = "";
             String down = "";
             String left = "";
@@ -118,15 +124,14 @@ public class AppServer extends Thread{
             while (true) {
                 while(!isReady){
                     try {
-                        System.out.println("let's handle this dear n°"+player.id);
-                        handleStartRequests(clientRequest);
+                        handleStartRequests();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 }
-                while(true){
-                    if (getRunPlayers().size() == MAX_PLAYERS) {
-                        for (RunPlayer rp : getRunPlayers()) {
+                while(!getAllPlayersReady()){
+                    if (getRunPlayers(this.gameId).size() == MAX_PLAYERS) {
+                        for (RunPlayer rp : getRunPlayers(this.gameId)) {
                             if (!isReady) {
                                 setAllPlayersReady(false);
                                 break;
@@ -141,7 +146,7 @@ public class AppServer extends Thread{
                     }
                 }
                 while(!isStartMessageSent){
-                    if(getGameJoinCounter() >=2 && getStartMessage().endsWith("END")) {
+                    if(getGameJoinCounter(this.gameId) >=MAX_PLAYERS && getStartMessage().endsWith("END")) {
                         System.out.println("response for " + player.name + " : " + startMessage);
                         pw.println(startMessage);
                         isStartMessageSent = true;
@@ -149,19 +154,16 @@ public class AppServer extends Thread{
                     System.out.print("");
                 }
                 try {
-                    requestAnswer = "";
                     clientRequest = br.readLine();
                     if (clientRequest.equals("PLAYER_GENERATE_POSITION")) {
                         player.generatePlayerPosition(grid);
                     }
                     if (clientRequest.equals("SURROUNDING")) {
                         if (discoveredWallsCounter == amountOfWalls && this.player.score == amountOfGold) {
+                            LeaderBoardFile.writeOnFile(this.player.name+":"+this.player.score);
                             pw.println("GAME_END " + this.player.getName() + ":" + this.player.score);
-                            playerLeaderScore.put(this.player.name,this.player.score);
-                            LeaderBoardHandler lbh = new LeaderBoardHandler(playerLeaderScore);
-                            lbh.gameLeaderboardBuilder();
                         } else {
-                            SurroundingSearcher surrssearch = new SurroundingSearcher(player.x, player.y, grid, players);
+                            SurroundingSearcher surrssearch = new SurroundingSearcher(player.x, player.y, grid, players.get(this.gameId));
                             requestAnswer = surrssearch.searcher();
                             up = surrssearch.getUp();
                             down = surrssearch.getDown();
@@ -200,6 +202,8 @@ public class AppServer extends Thread{
                     }
 
                     if (clientRequest.startsWith("UP")) {
+                        /*player.score = amountOfGold;
+                        discoveredWallsCounter = amountOfWalls;*/ // cheat code to finish the game quickly^^"
                         pw.println(moveUpRequestAnswer(up));
                     }
                     if (clientRequest.startsWith("DOWN")) {
@@ -219,8 +223,8 @@ public class AppServer extends Thread{
                 }
             }
         }
-        public void handleStartRequests(String msg) throws IOException {
-            msg = br.readLine();
+        public void handleStartRequests() throws IOException {
+            String msg = br.readLine();
             if (msg.startsWith("LEADER")) {
                 HashMap<String, Integer> hash;
                 LeaderBoardHandler lbh = new LeaderBoardHandler(playerLeaderScore);
@@ -241,7 +245,6 @@ public class AppServer extends Thread{
             if (msg.startsWith("GAME_JOIN")) {
                 System.out.println(msg);
                 player.setName(msg.split(":")[1].split(" ")[0]);
-                incrementJoinCounter();
                 isReady = true;
             }
         }
@@ -285,6 +288,32 @@ public class AppServer extends Thread{
             grid.deleteGold(player.x, player.y);
             return right;
         }
+    }
+
+    public void setAllPlayersReady(boolean x){
+        this.allPlayersReady = x;
+    }
+    public boolean getAllPlayersReady(){
+        return this.allPlayersReady;
+    }
+    public void incrementJoinCounter(int gameId){
+        int x = gameJoinCounter.get(gameId) + 1;
+        gameJoinCounter.set(gameId,x);
+    }
+    public int getGameJoinCounter(int gameId){
+        return gameJoinCounter.get(gameId);
+    }
+    public String getStartMessage(){
+        return this.startMessage;
+    }
+    public void setIsGameReadyToStart(boolean b){
+        isGameReadyToStart = b;
+    }
+    public boolean getIsGameReadyToStart(){
+        return isGameReadyToStart;
+    }
+    public ArrayList<RunPlayer> getRunPlayers(int gameId){
+        return allGamesRunPlayers.get(gameId);
     }
 
 }

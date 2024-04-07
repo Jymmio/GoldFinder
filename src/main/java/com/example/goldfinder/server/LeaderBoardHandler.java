@@ -12,7 +12,8 @@ public class LeaderBoardHandler {
     }
 
     public HashMap<String, Integer> gameLeaderboardBuilder() throws IOException {
-        String[] oldPlayersScoresString = LeaderBoardFile.readFile().split("\n");
+        String oldPlayerScoresStringInOne = LeaderBoardFile.readFile();
+        String[] oldPlayersScoresString = oldPlayerScoresStringInOne.split("\n");
         HashMap<String, Integer> oldPlayersScores = new HashMap<>();
         if(this.playersScores != null){
             oldPlayersScores = this.playersScores;
@@ -25,6 +26,12 @@ public class LeaderBoardHandler {
                 int score = Integer.parseInt(parts[1]);
                 oldPlayersScores.put(name, score);
             }
+        }
+        else{
+            String[] parts = oldPlayerScoresStringInOne.split(":");
+            String name = parts[0];
+            int score = Integer.parseInt(parts[1]);
+            oldPlayersScores.put(name, score);
         }
 
         System.out.println("HashMap avant le tri : " + oldPlayersScores);

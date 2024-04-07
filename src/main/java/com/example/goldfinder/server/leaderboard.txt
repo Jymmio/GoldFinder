@@ -1,6 +1,3 @@
-Corentin:10
-Nadjim:2
-Zineddine:18
-
-
-
+nadjim:40
+dedf:50
+:46

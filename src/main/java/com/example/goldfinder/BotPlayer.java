@@ -6,6 +6,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class BotPlayer {
+    private final int WAITING_TIME = 200;
     ConnectedPlayer connectedPlayer;
     Timer timer = new Timer();
     public BotPlayer(ConnectedPlayer cp){
@@ -32,7 +33,7 @@ public class BotPlayer {
                 }
             }
         };
-        timer.schedule(task, 0, 50);
+        timer.schedule(task, 0, WAITING_TIME);
     }
     public void stop() {
         if (timer != null) {

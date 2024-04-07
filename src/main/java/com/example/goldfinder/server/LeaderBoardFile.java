@@ -6,6 +6,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Scanner;
 
 public class LeaderBoardFile {
@@ -22,8 +25,11 @@ public class LeaderBoardFile {
     }
 
     public static void writeOnFile(String text) throws IOException {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(SOURCE_FILE_PATH))) {
-            bw.write(text + "\n");
+        if(readFile().length()!=0){
+            Files.write(Paths.get(SOURCE_FILE_PATH), ("\n" + text).getBytes(), StandardOpenOption.APPEND);
+        }
+        else {
+            Files.write(Paths.get(SOURCE_FILE_PATH), (text + "\n").getBytes(), StandardOpenOption.APPEND);
         }
     }
 }

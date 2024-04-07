@@ -148,7 +148,7 @@ public class Controller {
         score.textProperty().bind(connectedPlayer.player.scoreProperty().asString());
         connectedPlayer.sendSurroundingRequest();
         /*botPlayer = new BotPlayer(this.connectedPlayer);
-        botPlayer.start();*/ //TASK 3
+        botPlayer.start(); //TASK 3*/
     }
     public void shutDownBot(){
         if(botPlayer != null){
